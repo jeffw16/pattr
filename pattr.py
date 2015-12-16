@@ -43,11 +43,15 @@ def generate_id():
 
 def generate_nick():
     animals = ['buffalo', 'wildebeest', 'kudu', 'springbok', 'impala', 'antelope', 'lion', 'leopard', 'cheetah', 'serval',
-               'mongoose', 'elephant', 'giraffe', 'hyaena', 'jackal', 'rhino', 'zebra', 'crocodile']
+               'mongoose', 'elephant', 'giraffe', 'hyaena', 'jackal', 'rhino', 'zebra', 'crocodile', 'squid', 'frog', 'shark', 'whale',
+               'dolphin', 'narwhal', 'starfish', 'sponge', 'fish', 'anenome', 'seahorse', 'octopus', 'jellyfish', 'angler', 'blobfish',
+               'squidworm', 'tubeworm', 'eel']
 
     adjectives = ['mystic', 'rustic', 'sharp', 'toxic', 'enchanted', 'quiet', 'noisy', 'lively', 'modern',
                   'old', 'pleasant', 'dashing', 'leaping', 'running', 'eating', 'speaking', 'sleeping', 'playing', 'bouncing',
-                  'jolly', 'mystic']
+                  'jolly', 'mystic', 'angry', 'beautiful', 'cocky', 'dumb', 'electric', 'fancy', 'giant', 'howling', 'intelligent',
+                  'jubilant', 'klutzy', 'lame', 'monsterous', 'nervous', 'optimistic', 'picky', 'quivering', 'rambunctious', 'silly',
+                  'telepathic', 'upbeat']
 
     return 'pa-' + adjectives[random.randint(0, len(adjectives) - 1)] + animals[random.randint(0, len(animals) - 1)]
 
@@ -76,7 +80,7 @@ def charge():
         card=request.form['stripeToken']
     )
 
-    charge = stripe.Charge.create(
+    stripe.Charge.create(
         customer=customer.id,
         amount=amount,
         currency='usd',
@@ -109,6 +113,26 @@ def nick_passes(nickname):
         return False
     else:
         return True
+
+
+def linkify(message):
+    domain_extensions = ['.com', '.net', '.edu', '.gov',
+                         '.io', '.uk', '.ca', '.de',
+                         '.fr', '.us', '.it', '.biz',
+                         '.xyz', '.co', '.me', '.info']
+    m = message.split(' ')
+    if 'http://' in message or 'https://' in message and any(ext in message for ext in domain_extensions):
+        url_locs = [i for i, s in enumerate(m) if 'http://' in s]
+        url_locs += [i for i, s in enumerate(m) if 'https://' in s]
+        for loc in url_locs:
+            m[loc] = '<a target="_blank" href="' + m[loc] + '">' + m[loc] + '</a>'
+    if 'www.' in message and any(ext in message for ext in domain_extensions):
+        url_locs = [i for i, s in enumerate(m) if 'www.' in s]
+        for loc in url_locs:
+            if 'http' not in m[loc]:
+                m[loc] = '<a target="_blank" href="http://' + m[loc] + '">' + m[loc] + '</a>'
+    new_message = ' '.join(m)
+    return new_message
 
 
 @socketio.on('send message', namespace='')
@@ -152,13 +176,7 @@ def send_room_message(message):
                      {'data': message, 'bot': 'true'},
                      room=session['uid'])
             else:
-                if 'http://' in message or 'https://' in message:
-                    m = message.split(' ')
-                    url_locs = [i for i, s in enumerate(m) if 'http://' in s]
-                    url_locs += [i for i, s in enumerate(m) if 'https://' in s]
-                    for loc in url_locs:
-                        m[loc] = '<a href="' + m[loc] + '">' + m[loc] + '</a>'
-                    message = ' '.join(m)
+                message = linkify(message)
                 emit('my response',
                      {'data': message, 'whisper': 'true', 'target': data[1], 'sender': session['nick']},
                      room=target_uid)
@@ -208,31 +226,14 @@ def send_room_message(message):
                  room=session['uid'])
 
     else:
-        domain_extensions = ['.com', '.net', '.edu', '.gov', '.io', '.uk', '.ca', '.de', '.fr', '.us', '.it', '.biz', '.xyz', '.co', '.me', '.info']
-        if 'http://' in message['data'] or 'https://' in message['data']:
-            m = message['data'].split(' ')
-            url_locs = [i for i, s in enumerate(m) if 'http://' in s]
-            url_locs += [i for i, s in enumerate(m) if 'https://' in s]
-            for loc in url_locs:
-                m[loc] = '<a target="_blank" href="' + m[loc] + '">' + m[loc] + '</a>'
-            message = ' '.join(m)
+        if '\n' in message['data']:
+            msg = '<code><pre>' + message['data'] + '</pre></code>'
             emit('my response',
-                 {'data': message, 'sender': session['nick']},
+                 {'data': linkify(msg), 'sender': session['nick']},
                  room=session['room'])
-
-        elif 'www.' in message['data'] and any(ext in message['data'] for ext in domain_extensions):
-            m = message['data'].split(' ')
-            url_locs = [i for i, s in enumerate(m) if 'www.' in s]
-            for loc in url_locs:
-                m[loc] = '<a target="_blank" href="http://' + m[loc] + '">' + m[loc] + '</a>'
-            message = ' '.join(m)
-            emit('my response',
-                 {'data': message, 'sender': session['nick']},
-                 room=session['room'])
-
         else:
             emit('my response',
-                 {'data': message['data'], 'sender': session['nick']},
+                 {'data': linkify(message['data']), 'sender': session['nick']},
                  room=session['room'])
 
 
@@ -266,7 +267,7 @@ def donate_ssl():
         card=request.form['stripeToken']
     )
 
-    charge = stripe.Charge.create(
+    stripe.Charge.create(
         customer=customer.id,
         amount=amount,
         currency='usd',

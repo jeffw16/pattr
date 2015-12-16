@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Truly instant private messaging. No logs, no hassle.">
+  <meta name="description" content="Truly private messaging. No logs, no hassle.">
 
   <title>Pattr &ndash; Chat</title>
 
@@ -64,6 +64,18 @@
       socket.emit('disconnect request');
       return false;
     }
+    $(function() {
+        $("#msg_data").keypress(function (e) {
+            if(e.which == 13) {
+              if($('#msg_data').val().length > 0) {
+                socket.emit('send message', {room: '{{ session["room"] }}', data: $('#msg_data').val()});
+                $('#msg_data').val('');
+                return false;
+              }
+              return false;
+            }
+        });
+    });
     </script>
     <script>
       (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -77,6 +89,9 @@
 <body onbeforeunload="disconnect()">
   <div id="layout" class="pure-g">
     <div class="sidebar pure-u-1 pure-u-md-1-4">
+      <a href="https://github.com/justinpotts/pattr/">
+        <img src="{{ url_for('static', filename='forkongithub.png')}}" style="position: absolute; top: 0; left: 0; border: 0;">
+      </a>
       <center>
         <h1 style="font-family:Aller"><span style="color:lime">&middot;</span>pattr</h1>
       </center>
@@ -88,19 +103,6 @@
           </form>
         </h2>
       </div>
-      <div class="campaign-footer">
-        <h3>Support SSL Encryption for just $1</h3>
-        <form action="/donatessl" method="post">
-          <center>
-            <script src="https://checkout.stripe.com/checkout.js" class="stripe-button"
-              data-key="{{ key }}"
-              data-description="Pattr SSL Donation"
-              data-amount="100"
-              data-locale="auto"></script>
-          </center>
-        </form>
-        <p><a href="/ssl" style="color:white;">Learn more</a></p>
-      </div>
     </div>
     <div class="content pure-u-1 pure-u-md-3-4">
       <div class="chat">
@@ -109,7 +111,7 @@
       </div>
       <div>
         <form id="send_room" method="POST" action='#' class="pure-form">
-          <input name="msg_data" id="msg_data" type="text" autofocus="true" placeholder="Type something..." autocomplete="off">
+          <textarea name="msg_data" style=height:40px id="msg_data" type="text" autofocus="true" placeholder="Type something..." autocomplete="off"></textarea>
         </form>
       </div>
     </div>
