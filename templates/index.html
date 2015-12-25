@@ -35,8 +35,9 @@
       var roomCode = Math.random().toString(36).slice(-8);
       if(window.location.href == 'http://pattr.me' || window.location.href == 'http://www.pattr.me') {
         window.location.href='http://chat.pattr.me/c/'+roomCode;
-      }
-      else {
+      } elseif ( window.location.href == 'https://pattr.me' || window.location.href == 'https://www.pattr.me' ) {
+        window.location.href = 'https://chat.pattr.me/c/' + roomCode;
+      } else {
         window.location.href='/c/'+roomCode;
       }
     }
